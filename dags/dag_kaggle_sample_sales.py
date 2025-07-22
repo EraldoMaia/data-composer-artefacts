@@ -1,11 +1,11 @@
-from airflow                                            import DAG
-from airflow.models                                     import Variable
-from airflow.providers.google.cloud.operators.functions import CloudFunctionsInvokeFunctionOperator
-from airflow.operators.python                           import PythonOperator
-from datetime                                           import datetime
-from pytz                                               import timezone
+from airflow                                                  import DAG
+from airflow.models                                           import Variable
+from airflow.providers.google.cloud.operators.cloud_functions import CloudFunctionInvokeFunctionOperator
+from airflow.operators.python                                 import PythonOperator
+from datetime                                                 import datetime
+from pytz                                                     import timezone
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
-from modules.google_chat_notification                   import google_chat_notification
+from modules.google_chat_notification                         import google_chat_notification
 
 ## FUNCOES ##
 
@@ -47,7 +47,7 @@ with DAG(
     )
 
     # 2.Task para invocar a Cloud Function
-    trigger_cloud_function = CloudFunctionsInvokeFunctionOperator(
+    trigger_cloud_function = CloudFunctionInvokeFunctionOperator(
         task_id         = "fnc_kaggle_sample_sales",
         project_id      = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['project_id'] }}",
         location        = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['region'] }}",
