@@ -25,7 +25,7 @@ def get_airflow_env_vars():
         "input_data":   fnc_kaggle_sample_sales_variables['input_data']
     }
 
-def lib_google_chat_notification_error(context,webhook_url = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['project_id'] }}", timezone = timezone('America/Sao_Paulo')): 
+def lib_google_chat_notification_error(context,webhook_url = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['webhook_url'] }}", timezone = timezone('America/Sao_Paulo')): 
     google_chat_notification(context, webhook_url, timezone, VAR_MENSAGE='error')
 
 ## DEFINIÇÃO DOS PARAMETROS DA DAG ##
@@ -57,7 +57,7 @@ with DAG(
         location        = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['region'] }}",
         function_id     = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['function_id'] }}",
         gcp_conn_id     = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['gcp_conn_id'] }}",
-        input_data      = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['input_data'] }}",
+        input_data      = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['input_data'] }}"
     )
 
     # Definição do fluxo
