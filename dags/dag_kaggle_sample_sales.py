@@ -1,6 +1,6 @@
 from airflow                                                  import DAG
 from airflow.models                                           import Variable
-from airflow.providers.google.cloud.operators.cloud_functions import CloudFunctionInvokeFunctionOperator
+from airflow.providers.google.cloud.operators.functions       import CloudFunctionInvokeFunctionOperator
 from airflow.operators.python                                 import PythonOperator
 from datetime                                                 import datetime
 from pytz                                                     import timezone
