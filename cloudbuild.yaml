@@ -6,13 +6,13 @@ timeout: 3600s
 
 steps:
 
-  # 0. Sincroniza DAGs (substitui e remove os não existentes)
+  # 0. Sincroniza DAGs (substitui os existentes)
   - name: 'gcr.io/cloud-builders/gsutil'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        echo "Sincronizando DAGs (substituindo e removendo os não existentes)..."
+        echo "Sincronizando DAGs (substituindo os existentes)..."
         gsutil -m rsync -d -r dags gs://$_BUCKET/dags
 
   # 1. Sincroniza Data
