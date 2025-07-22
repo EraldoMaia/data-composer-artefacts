@@ -25,8 +25,12 @@ def get_airflow_env_vars():
         "input_data":   fnc_kaggle_sample_sales_variables['input_data']
     }
 
-def lib_google_chat_notification_error(context,webhook_url = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['webhook_url'] }}", timezone = timezone('America/Sao_Paulo')): 
-    notification_hook(context, webhook_url, timezone, VAR_MENSAGE='error')
+def lib_google_chat_notification_error(context):
+    ti          = context['ti']
+    webhook_url = ti.xcom_pull(task_ids='load_env_vars')['webhook_url']
+    
+    notification_hook(context, webhook_url, timezone('America/Sao_Paulo'), VAR_MENSAGE='error')
+
 
 ## DEFINIÇÃO DOS PARAMETROS DA DAG ##
 with DAG(
