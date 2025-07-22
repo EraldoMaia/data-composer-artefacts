@@ -20,7 +20,6 @@ def get_airflow_env_vars(**context):
     env_vars = {
         "project_id":   environment_variables['project_id'],
         "region":       environment_variables['region'],
-        "gcp_conn_id":  environment_variables['gcp_conn_id'],
         "webhook_url":  environment_variables['webhook_url'],
         "function_id":  fnc_kaggle_sample_sales_variables['function_id'],
         "input_data":   fnc_kaggle_sample_sales_variables['input_data']
@@ -38,25 +37,6 @@ def lib_google_chat_notification_error(context):
     webhook_url = ti.xcom_pull(task_ids='load_env_vars')['webhook_url']
 
     notification_hook(context, webhook_url, timezone('America/Sao_Paulo'), VAR_MENSAGE='error')
-
-
-def trigger_cloud_function_callable(**context):
-    """
-    Função Python para executar a Cloud Function dinamicamente com valores do XCom.
-    """
-    ti  = context['ti']
-    env = ti.xcom_pull(task_ids='load_env_vars')
-
-    task = CloudFunctionInvokeFunctionOperator(
-        task_id     = "fnc_kaggle_sample_sales_runtime",
-        project_id  = env['project_id'],
-        location    = env['region'],
-        function_id = env['function_id'],
-        gcp_conn_id = env['gcp_conn_id'],
-        input_data  = env['input_data']
-    )
-    return task.execute(context)
-
 
 ## DEFINIÇÃO DOS PARAMETROS DA DAG ##
 with DAG(
@@ -80,11 +60,14 @@ with DAG(
         provide_context = True
     )
 
-    # 2. Executa a Cloud Function usando os valores do XCom
-    trigger_cloud_function = PythonOperator(
-        task_id         = "fnc_kaggle_sample_sales",
-        python_callable = trigger_cloud_function_callable,
-        provide_context = True
+    # 2. Task para invocar a Cloud Function (usando templating Jinja)
+    trigger_cloud_function = CloudFunctionInvokeFunctionOperator(
+        task_id     = "fnc_kaggle_sample_sales",
+        project_id  = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['project_id'] }}",
+        location    = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['region'] }}",
+        function_id = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['function_id'] }}",
+        input_data  = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['input_data'] }}",
+        gcp_conn_id = "google_cloud_default" 
     )
 
     # Definição do fluxo
