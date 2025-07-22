@@ -1,6 +1,6 @@
 from airflow                                            import DAG
 from airflow.models                                     import Variable
-from airflow.providers.http.operators.http              import SimpleHttpOperator
+from airflow.providers.http.operators.http              import HttpOperator
 from airflow.operators.python                           import PythonOperator
 from datetime                                           import datetime
 from pytz                                               import timezone
@@ -62,7 +62,7 @@ with DAG(
     )
 
     # 2. Task para invocar a Cloud Function
-    fnc_kaggle_sample_sales = SimpleHttpOperator(
+    fnc_kaggle_sample_sales = HttpOperator(
         task_id         = "fnc_extract_api_correios",
         method          = "POST",
         http_conn_id    = "google_cloud_function_http_connection",  
