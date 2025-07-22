@@ -8,7 +8,6 @@ from pytz                                                     import timezone
 from modules.google_chat_notification                         import google_chat_notification
 
 ## FUNCOES ##
-
 def get_airflow_env_vars():
     """
     Função centralizada para importação das variáveis de ambiente do Airflow.
@@ -29,14 +28,15 @@ def get_airflow_env_vars():
 def lib_google_chat_notification_error(context,webhook_url = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['project_id'] }}", timezone = timezone('America/Sao_Paulo')): 
     google_chat_notification(context, webhook_url, timezone, VAR_MENSAGE='error')
 
-# Definição da DAG
+## DEFINIÇÃO DOS PARAMETROS DA DAG ##
 with DAG(
     dag_id              = "dag_kaggle_sample_sales",
-    schedule_interval   = "0 6 * * *",  # Executa todos os dias às 6 da manhã
+    schedule_interval   = "0 6 * * *",                          # Executa todos os dias às 6 da manhã
     start_date          = datetime(2025, 7, 1),
     catchup             = False,
     tags                = ["CloudFunction","BigQuery", "KaggleSampleSales"],
-    on_failure_callback = lib_google_chat_notification_error,  # Aleta de falhas
+    on_failure_callback = lib_google_chat_notification_error,   # Aleta de falhas
+    retries             = None,                                 # Número de tentativas em caso de falha
 ) as dag:
     
     # 1.Carrega as variáveis no PythonOperator
