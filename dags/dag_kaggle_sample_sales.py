@@ -63,7 +63,7 @@ with DAG(
 
     # 2. Task para invocar a Cloud Function
     fnc_kaggle_sample_sales = HttpOperator(
-        task_id         = "fnc_extract_api_correios",
+        task_id         = "fnc_kaggle_sample_sales",
         method          = "POST",
         http_conn_id    = "google_cloud_function_http_connection",  
         endpoint        = "/fnc-kaggle-sample-sales",
