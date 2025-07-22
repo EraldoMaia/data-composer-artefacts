@@ -5,7 +5,7 @@ from airflow.operators.python                                 import PythonOpera
 from datetime                                                 import datetime
 from pytz                                                     import timezone
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
-from modules.google_chat_notification                         import google_chat_notification
+from modules.google_chat_notification                         import notification_hook
 
 ## FUNCOES ##
 def get_airflow_env_vars():
@@ -26,7 +26,7 @@ def get_airflow_env_vars():
     }
 
 def lib_google_chat_notification_error(context,webhook_url = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['webhook_url'] }}", timezone = timezone('America/Sao_Paulo')): 
-    google_chat_notification(context, webhook_url, timezone, VAR_MENSAGE='error')
+    notification_hook(context, webhook_url, timezone, VAR_MENSAGE='error')
 
 ## DEFINIÇÃO DOS PARAMETROS DA DAG ##
 with DAG(
