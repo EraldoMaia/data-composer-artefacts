@@ -1,9 +1,10 @@
 from airflow                                            import DAG
 from airflow.models                                     import Variable
-from airflow.providers.google.cloud.operators.functions import CloudFunctionInvokeFunctionOperator
+from airflow.operators.http_operator                    import SimpleHttpOperator
 from airflow.operators.python                           import PythonOperator
 from datetime                                           import datetime
 from pytz                                               import timezone
+from json                                               import dumps as json_dumps
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
 from modules.google_chat_notification                   import notification_hook
 
@@ -60,15 +61,17 @@ with DAG(
         provide_context = True
     )
 
-    # 2. Task para invocar a Cloud Function (usando templating Jinja)
-    trigger_cloud_function = CloudFunctionInvokeFunctionOperator(
-        task_id     = "fnc_kaggle_sample_sales",
-        project_id  = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['project_id'] }}",
-        location    = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['region'] }}",
-        function_id = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['function_id'] }}",
-        input_data  = "{{ task_instance.xcom_pull(task_ids='load_env_vars')['input_data'] }}",
-        gcp_conn_id = "google_cloud_default" 
+    # 2. Task para invocar a Cloud Function
+    fnc_kaggle_sample_sales = SimpleHttpOperator(
+        task_id         = "fnc_extract_api_correios",
+        method          = "POST",
+        http_conn_id    = "google_cloud_function_http_connection",  
+        endpoint        = "/fnc-kaggle-sample-sales",
+        data            = json_dumps({
+
+        }),
+        headers         = {"Content-Type": "application/json"},
     )
 
     # Definição do fluxo
-    load_env_vars >> trigger_cloud_function
+    load_env_vars >> fnc_kaggle_sample_sales
