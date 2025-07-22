@@ -1,7 +1,7 @@
 import requests
 
 # Funcao de notificaco de erro para o Google Chat
-def google_chat_notification(context, VAR_WEBHOOK_URL, VAR_TIMEZONE, VAR_MENSAGE):
+def notification_hook(context, VAR_WEBHOOK_URL, VAR_TIMEZONE, VAR_MENSAGE):
     # Converter a execution_date para o fuso horÃ¡rio de 'America/Sao_Paulo'
     execution_date = context['execution_date'].astimezone(VAR_TIMEZONE)
     # Formatar a execution_date para remover os milissegundos
