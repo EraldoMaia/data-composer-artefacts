@@ -67,9 +67,7 @@ with DAG(
         method          = "POST",
         http_conn_id    = "google_cloud_function_http_connection",  
         endpoint        = "/fnc-kaggle-sample-sales",
-        data            = json_dumps({
-
-        }),
+        data            = "{{ ti.xcom_pull(task_ids='load_env_vars')['input_data'] | tojson }}",
         headers         = {"Content-Type": "application/json"},
     )
 
