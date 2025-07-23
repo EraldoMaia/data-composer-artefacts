@@ -4,12 +4,23 @@ from airflow.providers.http.operators.http              import HttpOperator
 from airflow.operators.python                           import PythonOperator
 from datetime                                           import datetime
 from pytz                                               import timezone
-from json                                               import dumps as json_dumps
+from google                                             import auth
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
 from modules.google_chat_notification                   import notification_hook
 
 
 ## FUNCOES ##
+def get_identity_token():
+    """
+    Obtém o token de identidade do Google Cloud para autenticação.
+    Utilizada como credenciais padrão de funcao que exigem autenticação OAuth 2.0.
+    """
+    credentials     = auth.default()
+    auth_req        = auth.transport.requests.Request()
+    credentials.refresh(auth_req)
+    
+    return credentials.id_token
+
 def get_airflow_env_vars(**context):
     """
     Função centralizada para importação das variáveis de ambiente do Airflow.
@@ -68,7 +79,10 @@ with DAG(
         http_conn_id    = "google_cloud_function_http_connection",  
         endpoint        = "/fnc-kaggle-sample-sales",
         data            = "{{ ti.xcom_pull(task_ids='load_env_vars')['input_data'] | tojson }}",
-        headers         = {"Content-Type": "application/json"},
+        headers         = {
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {get_identity_token()}"
+                          }
     )
 
     # Definição do fluxo
