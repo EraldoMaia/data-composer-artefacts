@@ -2,9 +2,14 @@ from airflow                                            import DAG
 from airflow.models                                     import Variable
 from airflow.providers.http.operators.http              import HttpOperator
 from airflow.operators.python                           import PythonOperator
+
 from datetime                                           import datetime
 from pytz                                               import timezone
-from google                                             import auth,oauth2
+
+## Bibliotecas do para autenticação e manipulação de tokens ##
+from google.auth.transport.requests                     import Request
+from google.oauth2                                      import id_token
+
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
 from modules.google_chat_notification                   import notification_hook
 
@@ -14,9 +19,9 @@ def get_identity_token(audience_url):
     """
     Obtém o Identity Token para autenticar na Cloud Function Gen2
     """
-    auth_req    = auth.transport.requests.Request()
+    auth_req = Request()
+    return id_token.fetch_id_token(auth_req, audience_url)
 
-    return oauth2.id_token.fetch_id_token(auth_req, audience_url)
 
 def generate_token(**kwargs):
     """
