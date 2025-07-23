@@ -32,8 +32,7 @@ def generate_identity_token_callable(**kwargs):
     audience_url = f"https://{env_vars['region']}-{env_vars['project_id']}.cloudfunctions.net/{env_vars['function_id']}"
     token        = get_identity_token(audience_url)
 
-    ti.xcom_push(key="identity_token", value=token)
-    ti.xcom_push(key="audience_url", value=audience_url)
+    return ti.xcom_push(key="identity_token", value=token)
 
 def get_airflow_env_vars(**context):
     """
@@ -69,7 +68,8 @@ def post_fnc_kaggle_sample_sales(**kwargs):
     """
 
     ti           = kwargs["ti"]
-    audience_url = ti.xcom_pull(task_ids="generate_identity_token", key="audience_url")
+    env_vars     = ti.xcom_pull(task_ids="load_env_vars")
+    audience_url = f"https://{env_vars['region']}-{env_vars['project_id']}.cloudfunctions.net/{env_vars['function_id']}"
     token        = ti.xcom_pull(task_ids="generate_identity_token", key="identity_token")
     input_data   = ti.xcom_pull(task_ids="load_env_vars")["input_data"]
 
@@ -84,8 +84,10 @@ def post_fnc_kaggle_sample_sales(**kwargs):
     )
 
     response.raise_for_status()
+    
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.text}")
+
     return response.text
 
 ## DEFINIÇÃO DOS PARAMETROS DA DAG ##
