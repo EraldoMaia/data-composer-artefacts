@@ -40,14 +40,14 @@ def get_airflow_env_vars(**context):
     Retorna um dicionário com todas as variáveis necessárias e faz push para o XCom.
     """
     environment_variables             = Variable.get('environment_variables', deserialize_json=True)
-    fnc_kaggle_sample_sales_variables = Variable.get('fnc_kaggle_sample_sales_variables', deserialize_json=True)
+    fnc_get_kaggle_load_gcs_variables = Variable.get('fnc_get_kaggle_load_gcs_variables', deserialize_json=True)
 
     env_vars = {
         "project_id":   environment_variables['project_id'],
         "region":       environment_variables['region'],
         "webhook_url":  environment_variables['webhook_url'],
-        "function_id":  fnc_kaggle_sample_sales_variables['function_id'],
-        "input_data":   fnc_kaggle_sample_sales_variables['input_data']
+        "function_id":  fnc_get_kaggle_load_gcs_variables['function_id'],
+        "input_data":   fnc_get_kaggle_load_gcs_variables['input_data']
     }
 
     context['ti'].xcom_push(key="env_vars", value=env_vars)
@@ -62,7 +62,7 @@ def lib_google_chat_notification_error(context):
 
     notification_hook(context, webhook_url, timezone('America/Sao_Paulo'), VAR_MENSAGE='error')
 
-def post_fnc_kaggle_sample_sales(**kwargs):
+def post_fnc_get_kaggle_load_gcs(**kwargs):
     """
     Invoca a Cloud Function Gen2 com os parâmetros necessários.
     """
@@ -84,7 +84,7 @@ def post_fnc_kaggle_sample_sales(**kwargs):
     )
 
     response.raise_for_status()
-    
+
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.text}")
 
@@ -120,11 +120,11 @@ with DAG(
     )
 
     # 3. Task para invocar a Cloud Function
-    fnc_kaggle_sample_sales = PythonOperator(
-        task_id         = "fnc_kaggle_sample_sales",
-        python_callable = post_fnc_kaggle_sample_sales,
+    fnc_get_kaggle_load_gcs = PythonOperator(
+        task_id         = "fnc_get_kaggle_load_gcs",
+        python_callable = post_fnc_get_kaggle_load_gcs,
         provide_context = True
     )
 
     # Fluxo de Execução
-    load_env_vars >> generate_identity_token >> fnc_kaggle_sample_sales
+    load_env_vars >> generate_identity_token >> fnc_get_kaggle_load_gcs
