@@ -1,4 +1,3 @@
-import requests
 from airflow                                            import DAG
 from airflow.models                                     import Variable
 from airflow.operators.python                           import PythonOperator
@@ -6,34 +5,11 @@ from airflow.operators.python                           import PythonOperator
 from datetime                                           import datetime
 from pytz                                               import timezone
 
-## Bibliotecas do para autenticação e manipulação de tokens ##
-from google.auth.transport.requests                     import Request
-from google.oauth2                                      import id_token
-
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
 from modules.google_chat_notification                   import notification_hook
-
+from modules.invoke_cloud_function                      import post_requests
 
 ## FUNCOES ##
-def get_identity_token(audience_url):
-    """
-    Obtém o Identity Token para autenticar na Cloud Function Gen2
-    """
-    return id_token.fetch_id_token(Request(), audience_url)
-
-
-def generate_identity_token_callable(**kwargs):
-    """
-    Gera o Identity Token e salva no XCom.
-    """
-    ti           = kwargs["ti"]
-    env_vars     = ti.xcom_pull(task_ids="load_env_vars")
-
-    audience_url = f"https://{env_vars['region']}-{env_vars['project_id']}.cloudfunctions.net/{env_vars['function_id']}"
-    token        = get_identity_token(audience_url)
-
-    return ti.xcom_push(key="identity_token", value=token)
-
 def get_airflow_env_vars(**context):
     """
     Função centralizada para importação das variáveis de ambiente do Airflow.
@@ -62,33 +38,15 @@ def lib_google_chat_notification_error(context):
 
     notification_hook(context, webhook_url, timezone('America/Sao_Paulo'), VAR_MENSAGE='error')
 
-def post_fnc_get_kaggle_load_gcs(**kwargs):
+def post_fnc_get_kaggle_load_gcs(**context):
     """
     Invoca a Cloud Function Gen2 com os parâmetros necessários.
     """
-
-    ti           = kwargs["ti"]
+    ti           = context["ti"]
     env_vars     = ti.xcom_pull(task_ids="load_env_vars")
-    audience_url = f"https://{env_vars['region']}-{env_vars['project_id']}.cloudfunctions.net/{env_vars['function_id']}"
-    token        = ti.xcom_pull(task_ids="generate_identity_token", key="identity_token")
-    input_data   = ti.xcom_pull(task_ids="load_env_vars")["input_data"]
-
-    response = requests.post(
-        audience_url,
-        headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
-        },
-        json    = input_data,
-        timeout = 120
-    )
-
-    response.raise_for_status()
-
-    print(f"Status Code: {response.status_code}")
-    print(f"Response: {response.text}")
-
-    return response.text
+    response = post_requests(env_vars['region'],env_vars['project_id'], env_vars['function_id'], env_vars['input_data'])
+    
+    return response
 
 ## DEFINIÇÃO DOS PARAMETROS DA DAG ##
 with DAG(
@@ -112,14 +70,7 @@ with DAG(
         provide_context = True
     )
 
-    # 2. Gera o Bearer Token para autenticação
-    generate_identity_token = PythonOperator(
-        task_id         = "generate_identity_token",
-        python_callable = generate_identity_token_callable,
-        provide_context = True,
-    )
-
-    # 3. Task para invocar a Cloud Function
+    # 2. Task para invocar a Cloud Function
     fnc_get_kaggle_load_gcs = PythonOperator(
         task_id         = "fnc_get_kaggle_load_gcs",
         python_callable = post_fnc_get_kaggle_load_gcs,
@@ -127,4 +78,4 @@ with DAG(
     )
 
     # Fluxo de Execução
-    load_env_vars >> generate_identity_token >> fnc_get_kaggle_load_gcs
+    load_env_vars >> fnc_get_kaggle_load_gcs
