@@ -4,22 +4,32 @@ from airflow.providers.http.operators.http              import HttpOperator
 from airflow.operators.python                           import PythonOperator
 from datetime                                           import datetime
 from pytz                                               import timezone
-from google                                             import auth
+from google                                             import auth,oauth2
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
 from modules.google_chat_notification                   import notification_hook
 
 
 ## FUNCOES ##
-def get_identity_token():
+def get_identity_token(audience_url):
     """
-    Obtém o token de identidade do Google Cloud para autenticação.
-    Utilizada como credenciais padrão de funcao que exigem autenticação OAuth 2.0.
+    Obtém o Identity Token para autenticar na Cloud Function Gen2
     """
-    credentials     = auth.default()
-    auth_req        = auth.transport.requests.Request()
-    credentials.refresh(auth_req)
+    auth_req    = auth.transport.requests.Request()
+
+    return oauth2.id_token.fetch_id_token(auth_req, audience_url)
+
+def generate_token(**kwargs):
+    """
+    Gera o Identity Token e armazena no XCom
+    """
+    function_id     = kwargs["ti"].xcom_pull(task_ids="load_env_vars", key="function_id")
+    region          = kwargs["ti"].xcom_pull(task_ids="load_env_vars", key="region")
+    project_id      = kwargs["ti"].xcom_pull(task_ids="load_env_vars", key="project_id")
+
+    audience_url    = f"https://{region}-{project_id}.cloudfunctions.net/{function_id}"
+    token           = get_identity_token(audience_url)
     
-    return credentials.id_token
+    kwargs["ti"].xcom_push(key="identity_token", value=token)
 
 def get_airflow_env_vars(**context):
     """
@@ -72,7 +82,14 @@ with DAG(
         provide_context = True
     )
 
-    # 2. Task para invocar a Cloud Function
+    # 2. Gera o Bearer Token para autenticação
+    generate_identity_token = PythonOperator(
+        task_id         = "generate_identity_token",
+        python_callable = generate_token,
+        provide_context = True,
+    )
+
+    # 3. Task para invocar a Cloud Function
     fnc_kaggle_sample_sales = HttpOperator(
         task_id         = "fnc_kaggle_sample_sales",
         method          = "POST",
@@ -81,9 +98,9 @@ with DAG(
         data            = "{{ ti.xcom_pull(task_ids='load_env_vars')['input_data'] | tojson }}",
         headers         = {
                             "Content-Type": "application/json",
-                            "Authorization": f"Bearer {get_identity_token()}"
+                            "Authorization": "Bearer {{ ti.xcom_pull(task_ids='generate_identity_token', key='identity_token') }}",
                           }
     )
 
-    # Definição do fluxo
-    load_env_vars >> fnc_kaggle_sample_sales
+    # Fluxo de Execução
+    load_env_vars >> generate_identity_token >> fnc_kaggle_sample_sales
