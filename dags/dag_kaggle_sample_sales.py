@@ -126,7 +126,8 @@ with DAG(
                                 """,
                                 "useLegacySql": False,
                             }
-                         }
+                         },
+        location        = "southamerica-east1",  
     )
 
     end = DummyOperator(
