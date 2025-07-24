@@ -4,7 +4,7 @@ Para poder usar a intragracao entre os projetos é necessario fornecer os acesso
 
 1. Camada raw:
    ```
-   gcloud config set project raw-zone
+   gcloud config set project raw
 
    gcloud projects add-iam-policy-binding raw \
      --member="serviceAccount:composer-sa@data-ops-466417.iam.gserviceaccount.com" \
