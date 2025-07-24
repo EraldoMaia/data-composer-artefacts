@@ -127,7 +127,7 @@ with DAG(
                                 "useLegacySql": False,
                             }
                          },
-        location        = '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["region"] }}',
+        location        = "{{ ti.xcom_pull(task_ids='get_region_task', key='bq_region') }}",
     )
 
     end = DummyOperator(
