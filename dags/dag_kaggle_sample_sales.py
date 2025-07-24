@@ -117,7 +117,7 @@ with DAG(
          configuration  = {
                             "query": {
                                 "query": """
-                                    CALL `procs.prc_load_tb_sample_sales`(
+                                    CALL `'{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}'.procs.prc_load_tb_sample_sales`(
                                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_raw"] }}',
                                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
                                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tabela"] }}',
