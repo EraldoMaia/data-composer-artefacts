@@ -28,7 +28,8 @@ def get_airflow_env_vars(**context):
     env_vars = {
         "project_id":                   environment_variables['project_id'],
         "region":                       environment_variables['region'],
-        "webhook_url":                  environment_variables['webhook_url'],
+        "webhook_error_url":            environment_variables['webhook_error_url'],
+        "webhook_success_url":          environment_variables['webhook_success_url'],
         "var_prj_raw":                  environment_variables['var_prj_raw'],
         "var_prj_trusted":              environment_variables['var_prj_trusted'],
         "var_prj_refined":              environment_variables['var_prj_refined'],
@@ -51,13 +52,27 @@ def lib_google_chat_notification_error(context):
     Callback de falha para enviar notificação ao Google Chat.
     """
     ti          = context['ti']
-    webhook_url = ti.xcom_pull(task_ids='load_env_vars')['webhook_url']
+    webhook_url = ti.xcom_pull(task_ids='load_env_vars')['webhook_error_url']
 
     return notification_hook(
         context, 
         webhook_url, 
         timezone('America/Sao_Paulo'), 
         VAR_MENSAGE='error'
+    )
+
+def lib_google_chat_notification_success(context):
+    """
+    Callback de falha para enviar notificação ao Google Chat.
+    """
+    ti          = context['ti']
+    webhook_url = ti.xcom_pull(task_ids='load_env_vars')['webhook_success_url']
+
+    return notification_hook(
+        context, 
+        webhook_url, 
+        timezone('America/Sao_Paulo'), 
+        VAR_MENSAGE='success'
     )
 
 def invoke_fnc_get_kaggle_load_gcs(**context):
@@ -98,8 +113,9 @@ with DAG(
     default_args        = {
                             'owner':               'Airflow - Data Engineering',
                             'start_date':          datetime(2025, 7, 1),
-                            'on_failure_callback': lib_google_chat_notification_error,  # Notificação em caso de erro
-                            'retries':              None,                               # Não reexecuta em caso de falha
+                            'on_failure_callback': lib_google_chat_notification_error,   # Notificação em caso de erro
+                            'on_success_callback': lib_google_chat_notification_success, # Notificação em caso de sucesso
+                            'retries':              None,                                # Não reexecuta em caso de falha
                           }
 ) as dag:
     
