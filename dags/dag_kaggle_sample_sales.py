@@ -132,7 +132,7 @@ with DAG(
     prc_load_tb_sample_sales = invoke_gbq_proc(
         task_id = "prc_load_tb_sample_sales",
         query   = """
-                    CALL `{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_trusted'] }}.procs.prc_load_tb_sample_sales (
+                    CALL `{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_trusted'] }}.procs.prc_load_tb_sample_sales` (
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_raw"] }}',
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tb_sample_sales"] }}',
@@ -145,7 +145,7 @@ with DAG(
     prc_load_tb_top10_line_products = invoke_gbq_proc(
         task_id = "prc_load_tb_top10_line_products",
         query   = """
-                    CALL `{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_refined'] }}.procs.prc_load_tb_top10_line_products (
+                    CALL `{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_refined'] }}.procs.prc_load_tb_top10_line_products` (
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_refined"] }}',
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["tb_top10_line_products"] }}',
