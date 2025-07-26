@@ -28,15 +28,15 @@ def get_airflow_env_vars(**context):
         "project_id":                   environment_variables['project_id'],
         "region":                       environment_variables['region'],
         "webhook_url":                  environment_variables['webhook_url'],
+        "var_prj_raw":                  environment_variables['var_prj_raw'],
+        "var_prj_trusted":              environment_variables['var_prj_trusted'],
+        "var_prj_refined":              environment_variables['var_prj_refined'],
         # Variáveis específicas para as Cloud Functions
         "function_id_kaggle_gcs":       fnc_get_kaggle_load_gcs_variables['function_id'],
         "input_data_kaggle_gcs":        fnc_get_kaggle_load_gcs_variables['input_data'],
         "function_id_gcs_gbq":          fnc_get_gcs_load_gbq_variables['function_id'],
         "input_data_gcs_gbq":           fnc_get_gcs_load_gbq_variables['input_data'],
         # Variáveis especificas para procidures do BigQuery
-        "var_prj_raw":                  prc_load_trusted_tb_sample_sales_variables['var_prj_raw'],
-        "var_prj_trusted":              prc_load_trusted_tb_sample_sales_variables['var_prj_trusted'],
-        "var_prj_refined":              prc_load_refined_tb_top10_line_products_variables['var_prj_refined'],
         "var_tb_sample_sales":          prc_load_trusted_tb_sample_sales_variables['var_tabela'],
         "var_tb_top10_line_products":   prc_load_refined_tb_top10_line_products_variables['var_tabela'],
         "var_dataset_kaggle":           prc_load_trusted_tb_sample_sales_variables['var_dataset']
