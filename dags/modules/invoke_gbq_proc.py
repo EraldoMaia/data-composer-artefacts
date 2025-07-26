@@ -1,23 +1,16 @@
 from airflow.providers.google.cloud.operators.bigquery  import BigQueryInsertJobOperator
 
-def invoke_gbq_proc(proc_project, origin_project, destination_project, table_name, dataset_name, region):
+def invoke_gbq_proc(task_id, query, region):
     """
-    Invokes a BigQuery stored procedure to load data into the trusted table.
+    Invoca a procedure do BigQuery usando o BigQueryInsertJobOperator.
     """
     return BigQueryInsertJobOperator(
-        task_id=f'prc_load_{table_name}',
-        configuration={
-            "query": {
-                "query": f"""
-                    CALL `{proc_project}.procs.prc_load_{table_name}`(
-                        '{origin_project}',
-                        '{destination_project}',
-                        '{table_name}',
-                        '{dataset_name}'
-                    );
-                """,
-                "useLegacySql": False
-            }
-        },
-        location=f"{region}",
+       task_id      = task_id,
+       configuration= {
+                        "query": {
+                            "query": query,
+                            "useLegacySql": False,
+                        }
+                    },
+       location     = region
     )
