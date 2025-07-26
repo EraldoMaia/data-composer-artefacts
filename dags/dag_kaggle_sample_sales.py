@@ -17,10 +17,10 @@ def get_airflow_env_vars(**context):
     Função centralizada para importação das variáveis de ambiente do Airflow.
     Retorna um dicionário com todas as variáveis necessárias e faz push para o XCom.
     """
-    environment_variables                               = Variable.get('environment_variables', deserialize_json=True)
-    fnc_get_kaggle_load_gcs_variables                   = Variable.get('fnc_get_kaggle_load_gcs_variables', deserialize_json=True)
-    fnc_get_gcs_load_gbq_variables                      = Variable.get('fnc_get_gcs_load_gbq_variables', deserialize_json=True)
-    prc_load_trusted_tb_sample_sales_variables          = Variable.get('prc_load_trusted_tb_sample_sales_variables', deserialize_json=True)
+    environment_variables                               = Variable.get('environment_variables',                             deserialize_json=True)
+    fnc_get_kaggle_load_gcs_variables                   = Variable.get('fnc_get_kaggle_load_gcs_variables',                 deserialize_json=True)
+    fnc_get_gcs_load_gbq_variables                      = Variable.get('fnc_get_gcs_load_gbq_variables',                    deserialize_json=True)
+    prc_load_trusted_tb_sample_sales_variables          = Variable.get('prc_load_trusted_tb_sample_sales_variables',        deserialize_json=True)
     prc_load_refined_tb_top10_line_products_variables   = Variable.get('prc_load_refined_tb_top10_line_products_variables', deserialize_json=True)
 
 
@@ -52,7 +52,7 @@ def lib_google_chat_notification_error(context):
     ti          = context['ti']
     webhook_url = ti.xcom_pull(task_ids='load_env_vars')['webhook_url']
 
-    notification_hook(context, webhook_url, timezone('America/Sao_Paulo'), VAR_MENSAGE='error')
+    return notification_hook(context, webhook_url, timezone('America/Sao_Paulo'), VAR_MENSAGE='error')
 
 def invoke_fnc_get_kaggle_load_gcs(**context):
     """
@@ -60,9 +60,13 @@ def invoke_fnc_get_kaggle_load_gcs(**context):
     """
     ti           = context["ti"]
     env_vars     = ti.xcom_pull(task_ids="load_env_vars")
-    response = post_requests(env_vars['region'],env_vars['project_id'], env_vars['function_id_kaggle_gcs'], env_vars['input_data_kaggle_gcs'])
-    
-    return response
+
+    return post_requests(
+        region      = env_vars['region'],
+        project_id  = env_vars['project_id'], 
+        function_id = env_vars['function_id_kaggle_gcs'], 
+        input_data  = env_vars['input_data_kaggle_gcs']
+    )
 
 def invoke_fnc_get_gcs_load_gbq(**context):
     """
@@ -70,9 +74,13 @@ def invoke_fnc_get_gcs_load_gbq(**context):
     """
     ti           = context["ti"]
     env_vars     = ti.xcom_pull(task_ids="load_env_vars")
-    response = post_requests(env_vars['region'],env_vars['project_id'], env_vars['function_id_gcs_gbq'], env_vars['input_data_gcs_gbq'])
-    
-    return response
+
+    return post_requests(
+        region      = env_vars['region'],
+        project_id  = env_vars['project_id'], 
+        function_id = env_vars['function_id_gcs_gbq'], 
+        input_data  = env_vars['input_data_gcs_gbq']
+    )
 
 def invoke_prc_load_trusted_tb_sample_sales(**context):
     """
