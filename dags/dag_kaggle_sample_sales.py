@@ -17,11 +17,11 @@ def get_airflow_env_vars(**context):
     Função centralizada para importação das variáveis de ambiente do Airflow.
     Retorna um dicionário com todas as variáveis necessárias e faz push para o XCom.
     """
-    environment_variables                       = Variable.get('environment_variables', deserialize_json=True)
-    fnc_get_kaggle_load_gcs_variables           = Variable.get('fnc_get_kaggle_load_gcs_variables', deserialize_json=True)
-    fnc_get_gcs_load_gbq_variables              = Variable.get('fnc_get_gcs_load_gbq_variables', deserialize_json=True)
-    prc_load_trusted_tb_sample_sales_variables  = Variable.get('prc_load_trusted_tb_sample_sales_variables', deserialize_json=True)
-    prc_load_refined_tb_top10_line_products     = Variable.get('prc_load_refined_tb_top10_line_products', deserialize_json=True)
+    environment_variables                               = Variable.get('environment_variables', deserialize_json=True)
+    fnc_get_kaggle_load_gcs_variables                   = Variable.get('fnc_get_kaggle_load_gcs_variables', deserialize_json=True)
+    fnc_get_gcs_load_gbq_variables                      = Variable.get('fnc_get_gcs_load_gbq_variables', deserialize_json=True)
+    prc_load_trusted_tb_sample_sales_variables          = Variable.get('prc_load_trusted_tb_sample_sales_variables', deserialize_json=True)
+    prc_load_refined_tb_top10_line_products_variables   = Variable.get('prc_load_refined_tb_top10_line_products_variables', deserialize_json=True)
 
 
     env_vars = {
@@ -36,10 +36,10 @@ def get_airflow_env_vars(**context):
         # Variáveis especificas para procidures do BigQuery
         "var_prj_raw":                  prc_load_trusted_tb_sample_sales_variables['var_prj_raw'],
         "var_prj_trusted":              prc_load_trusted_tb_sample_sales_variables['var_prj_trusted'],
-        "var_prj_refined":              prc_load_refined_tb_top10_line_products['var_prj_refined'],
+        "var_prj_refined":              prc_load_refined_tb_top10_line_products_variables['var_prj_refined'],
         "var_tb_sample_sales":          prc_load_trusted_tb_sample_sales_variables['var_tabela'],
-        "var_tb_top10_line_products":   prc_load_refined_tb_top10_line_products['var_tabela'],
-        "var_dataset_kaggle":           prc_load_trusted_tb_sample_sales_variables['var_dataset'],
+        "var_tb_top10_line_products":   prc_load_refined_tb_top10_line_products_variables['var_tabela'],
+        "var_dataset_kaggle":           prc_load_trusted_tb_sample_sales_variables['var_dataset']
     }
 
     context['ti'].xcom_push(key="env_vars", value=env_vars)
