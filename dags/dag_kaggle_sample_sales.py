@@ -21,6 +21,7 @@ def get_airflow_env_vars(**context):
     fnc_get_kaggle_load_gcs_variables           = Variable.get('fnc_get_kaggle_load_gcs_variables', deserialize_json=True)
     fnc_get_gcs_load_gbq_variables              = Variable.get('fnc_get_gcs_load_gbq_variables', deserialize_json=True)
     prc_load_trusted_tb_sample_sales_variables  = Variable.get('prc_load_trusted_tb_sample_sales_variables', deserialize_json=True)
+    prc_load_refined_tb_top10_line_products     = Variable.get('prc_load_refined_tb_top10_line_products', deserialize_json=True)
 
 
     env_vars = {
@@ -156,4 +157,4 @@ with DAG(
     )   
 
     # Fluxo de Execução
-    start >> load_env_vars >> fnc_get_kaggle_load_gcs >> fnc_get_gcs_load_gbq >> prc_load_trusted_tb_sample_sales >> end
+    start >> load_env_vars >> fnc_get_kaggle_load_gcs >> fnc_get_gcs_load_gbq >> prc_load_trusted_tb_sample_sales >> prc_load_refined_tb_top10_line_products >> end
