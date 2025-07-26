@@ -179,7 +179,7 @@ with DAG(
     # 6. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável
     check_carga_tb_sample_sales = check_carga_media_log(
             task_id             = "check_carga_tb_sample_sales",
-            project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['project_id'] }}",
+            project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_trusted'] }}",
             dataset_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_dataset_kaggle'] }}",
             table_name          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_tb_sample_sales'] }}",
             dias_media          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['dias_media'] }}",
@@ -190,7 +190,7 @@ with DAG(
     # 7. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável
     check_carga_tb_top10_line_products = check_carga_media_log(
             task_id             = "check_carga_tb_top10_line_products",
-            project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['project_id'] }}",
+            project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_refined'] }}",
             dataset_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_dataset_kaggle'] }}",
             table_name          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_tb_top10_line_products'] }}",
             dias_media          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['dias_media'] }}",
