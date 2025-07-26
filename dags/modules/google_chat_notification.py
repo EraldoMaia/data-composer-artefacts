@@ -12,11 +12,11 @@ def notification_hook(context, VAR_WEBHOOK_URL, VAR_TIMEZONE, VAR_MENSAGE):
 
     # Definir o ti­tulo e subti­tulo da mensagem com base no tipo de mensagem
     if VAR_MENSAGE == 'error':
-        title = f"âŒ <b>[{formatted_execution_date}]</b> Falha na execucao da task: {context['task_instance'].task_id}!"
+        title = f"<b>[{formatted_execution_date}]</b> Falha na execucao da task: {context['task_instance'].task_id}!"
         subtitle = f"DAG: {context['dag'].dag_id}"
         
     elif VAR_MENSAGE == 'success':
-        title = f"âœ… <b>[{formatted_execution_date}]</b> Sucesso na execucao da task: {context['task_instance'].task_id}!"
+        title = f"<b>[{formatted_execution_date}]</b> Sucesso na execucao da task: {context['task_instance'].task_id}!"
         subtitle = f"DAG: {context['dag'].dag_id}"
 
     # Construir a mensagem no formato de um card
