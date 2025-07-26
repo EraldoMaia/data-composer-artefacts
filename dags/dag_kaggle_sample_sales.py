@@ -24,19 +24,21 @@ def get_airflow_env_vars(**context):
 
 
     env_vars = {
-        "project_id":   environment_variables['project_id'],
-        "region":       environment_variables['region'],
-        "webhook_url":  environment_variables['webhook_url'],
+        "project_id":                   environment_variables['project_id'],
+        "region":                       environment_variables['region'],
+        "webhook_url":                  environment_variables['webhook_url'],
         # Variáveis específicas para as Cloud Functions
-        "function_id_kaggle_gcs":fnc_get_kaggle_load_gcs_variables['function_id'],
-        "input_data_kaggle_gcs": fnc_get_kaggle_load_gcs_variables['input_data'],
-        "function_id_gcs_gbq":   fnc_get_gcs_load_gbq_variables['function_id'],
-        "input_data_gcs_gbq":    fnc_get_gcs_load_gbq_variables['input_data'],
+        "function_id_kaggle_gcs":       fnc_get_kaggle_load_gcs_variables['function_id'],
+        "input_data_kaggle_gcs":        fnc_get_kaggle_load_gcs_variables['input_data'],
+        "function_id_gcs_gbq":          fnc_get_gcs_load_gbq_variables['function_id'],
+        "input_data_gcs_gbq":           fnc_get_gcs_load_gbq_variables['input_data'],
         # Variáveis especificas para procidures do BigQuery
-        "var_prj_raw":            prc_load_trusted_tb_sample_sales_variables['var_prj_raw'],
-        "var_prj_trusted":        prc_load_trusted_tb_sample_sales_variables['var_prj_trusted'],
-        "var_tabela":             prc_load_trusted_tb_sample_sales_variables['var_tabela'],
-        "var_dataset":            prc_load_trusted_tb_sample_sales_variables['var_dataset']
+        "var_prj_raw":                  prc_load_trusted_tb_sample_sales_variables['var_prj_raw'],
+        "var_prj_trusted":              prc_load_trusted_tb_sample_sales_variables['var_prj_trusted'],
+        "var_prj_refined":              prc_load_refined_tb_top10_line_products['var_prj_refined'],
+        "var_tb_sample_sales":          prc_load_trusted_tb_sample_sales_variables['var_tabela'],
+        "var_tb_top10_line_products":   prc_load_refined_tb_top10_line_products['var_tabela'],
+        "var_dataset_kaggle":           prc_load_trusted_tb_sample_sales_variables['var_dataset'],
     }
 
     context['ti'].xcom_push(key="env_vars", value=env_vars)
@@ -120,8 +122,27 @@ with DAG(
                                     CALL `{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}.procs.prc_load_tb_sample_sales`(
                                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_raw"] }}',
                                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tabela"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_dataset"] }}'
+                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tb_sample_sales"] }}',
+                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_dataset_kaggle"] }}'
+                                    );
+                                """,
+                                "useLegacySql": False,
+                            }
+                         },
+        location        = "southamerica-east1",  
+    )
+
+    # 5. Task para carregar os dados do BigQuery para a camada refined
+    prc_load_refined_tb_top10_line_products = BigQueryInsertJobOperator(
+        task_id         = "prc_load_refined_tb_top10_line_products",
+         configuration  = {
+                            "query": {
+                                "query": """
+                                    CALL `{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_refined"] }}.procs.prc_load_tb_sample_sales`(
+                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
+                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_refined"] }}',
+                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tb_top10_line_products"] }}',
+                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_dataset_kaggle"] }}'
                                     );
                                 """,
                                 "useLegacySql": False,
