@@ -208,4 +208,4 @@ with DAG(
     )   
 
     # Fluxo de Execução
-    start >> load_env_vars >> fnc_get_kaggle_load_gcs >> fnc_get_gcs_load_gbq >> prc_load_tb_sample_sales >> check_carga_tb_sample_sales >> prc_load_tb_top10_line_products >> check_carga_tb_sample_sales >> end
+    start >> load_env_vars >> fnc_get_kaggle_load_gcs >> fnc_get_gcs_load_gbq >> prc_load_tb_sample_sales >> check_carga_tb_sample_sales >> prc_load_tb_top10_line_products >> check_carga_tb_top10_line_products >> end
