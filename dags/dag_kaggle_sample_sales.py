@@ -11,6 +11,7 @@ from pytz                                               import timezone
 from modules.google_chat_notification                   import notification_hook
 from modules.invoke_cloud_function                      import post_requests
 from modules.invoke_gbq_proc                            import invoke_gbq_proc
+from modules.check_carga                                import check_carga_media_log
 
 ## FUNCOES ##
 def get_airflow_env_vars(**context):
@@ -23,6 +24,9 @@ def get_airflow_env_vars(**context):
     fnc_get_gcs_load_gbq_variables                      = Variable.get('fnc_get_gcs_load_gbq_variables',                    deserialize_json=True)
     prc_load_trusted_tb_sample_sales_variables          = Variable.get('prc_load_trusted_tb_sample_sales_variables',        deserialize_json=True)
     prc_load_refined_tb_top10_line_products_variables   = Variable.get('prc_load_refined_tb_top10_line_products_variables', deserialize_json=True)
+    check_carga_tb_sample_sales_variables               = Variable.get('check_carga_tb_sample_sales_variables',             deserialize_json=True)
+    check_carga_tb_top10_line_products_variables        = Variable.get('check_carga_tb_top10_line_products_variables',      deserialize_json=True)  
+
 
 
     env_vars = {
@@ -41,7 +45,14 @@ def get_airflow_env_vars(**context):
         # Variáveis especificas para procidures do BigQuery
         "var_tb_sample_sales":          prc_load_trusted_tb_sample_sales_variables['var_tabela'],
         "var_tb_top10_line_products":   prc_load_refined_tb_top10_line_products_variables['var_tabela'],
-        "var_dataset_kaggle":           prc_load_trusted_tb_sample_sales_variables['var_dataset']
+        "var_dataset_kaggle":           prc_load_trusted_tb_sample_sales_variables['var_dataset'],
+        # Variaveis específicas para a verificação de carga
+        "dias_media_tb_sample_sales_variables":          check_carga_tb_sample_sales_variables['dias_media'],
+        "tolerancia_inferior_tb_sample_sales_variables": check_carga_tb_sample_sales_variables['tolerancia_inferior'],
+        "tolerancia_superior_tb_sample_sales_variables": check_carga_tb_sample_sales_variables['tolerancia_superior'],
+        "dias_media_tb_top10_line_products_variables":          check_carga_tb_top10_line_products_variables['dias_media'],
+        "tolerancia_inferior_tb_top10_line_products_variables": check_carga_tb_top10_line_products_variables['tolerancia_inferior'],
+        "tolerancia_superior_tb_top10_line_products_variables": check_carga_tb_top10_line_products_variables['tolerancia_superior'],
     }
 
     context['ti'].xcom_push(key="env_vars", value=env_vars)
@@ -170,9 +181,31 @@ with DAG(
                     """    
     )
 
+    # 6. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável
+    check_carga_tb_sample_sales = check_carga_media_log(
+            task_id             = "check_carga_tb_sample_sales",
+            project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['project_id'] }}",
+            dataset_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_dataset_kaggle'] }}",
+            table_name          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_tb_sample_sales'] }}",
+            dias_media          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['dias_media_tb_sample_sales_variables'] }}",
+            tolerancia_inferior = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['tolerancia_inferior_tb_sample_sales_variables'] }}", 
+            tolerancia_superior = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['tolerancia_superior_tb_sample_sales_variables'] }}"   
+    )
+
+    # 7. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável
+    check_carga_tb_top10_line_products = check_carga_media_log(
+            task_id             = "check_carga_tb_top10_line_products",
+            project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['project_id'] }}",
+            dataset_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_dataset_kaggle'] }}",
+            table_name          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_tb_top10_line_products'] }}",
+            dias_media          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['dias_media_tb_top10_line_products_variables'] }}",
+            tolerancia_inferior = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['tolerancia_inferior_tb_top10_line_products_variables'] }}", 
+            tolerancia_superior = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['tolerancia_superior_tb_top10_line_products_variables'] }}"   
+    )
+
     end = DummyOperator(
         task_id = "end"
     )   
 
     # Fluxo de Execução
-    start >> load_env_vars >> fnc_get_kaggle_load_gcs >> fnc_get_gcs_load_gbq >> prc_load_tb_sample_sales >> prc_load_tb_top10_line_products >> end
+    start >> load_env_vars >> fnc_get_kaggle_load_gcs >> fnc_get_gcs_load_gbq >> prc_load_tb_sample_sales >> check_carga_tb_sample_sales >> prc_load_tb_top10_line_products >> check_carga_tb_sample_sales >> end
