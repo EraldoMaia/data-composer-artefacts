@@ -138,8 +138,7 @@ with DAG(
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tb_sample_sales"] }}',
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_dataset_kaggle"] }}'
                     );
-                    """,
-        region  = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['region'] }}"
+                    """
     )
 
     # 5. Task para carregar os dados do BigQuery para a camada refined
@@ -152,8 +151,7 @@ with DAG(
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["tb_top10_line_products"] }}',
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_dataset_kaggle"] }}'
                     );
-                    """,
-        region  = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['region'] }}"
+                    """    
     )
 
     end = DummyOperator(
