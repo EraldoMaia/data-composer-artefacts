@@ -2,7 +2,6 @@ from airflow                                            import DAG
 from airflow.models                                     import Variable
 from airflow.operators.python                           import PythonOperator
 from airflow.operators.dummy                            import DummyOperator
-from airflow.providers.google.cloud.operators.bigquery  import BigQueryInsertJobOperator
 
 from datetime                                           import datetime
 from pytz                                               import timezone
@@ -10,6 +9,7 @@ from pytz                                               import timezone
 ## Bibliotecas desenvolvidas pelo time no diretorio modules ##
 from modules.google_chat_notification                   import notification_hook
 from modules.invoke_cloud_function                      import post_requests
+from modules.invoke_gbq_proc                            import invoke_gbq_proc
 
 ## FUNCOES ##
 def get_airflow_env_vars(**context):
@@ -74,6 +74,37 @@ def invoke_fnc_get_gcs_load_gbq(**context):
     
     return response
 
+def invoke_prc_load_trusted_tb_sample_sales(**context):
+    """
+    Invoca o procedimento armazenado do BigQuery para carregar os dados na tabela trusted.
+    """
+    ti           = context["ti"]
+    env_vars     = ti.xcom_pull(task_ids="load_env_vars")
+    
+    return invoke_gbq_proc(
+        proc_project        = env_vars['var_prj_trusted'],
+        origin_project      = env_vars['var_prj_raw'],
+        destination_project = env_vars['var_prj_trusted'],
+        table_name          = env_vars['var_tb_sample_sales'],
+        dataset_name        = env_vars['var_dataset_kaggle'],
+        region              = env_vars['region']
+    )
+
+def invoke_prc_load_refined_tb_top10_line_products(**context):
+    """
+    Invoca o procedimento armazenado do BigQuery para carregar os dados na tabela refined.
+    """
+    ti           = context["ti"]
+    env_vars     = ti.xcom_pull(task_ids="load_env_vars")
+    
+    return invoke_gbq_proc(
+        proc_project        = env_vars['var_prj_refined'],
+        origin_project      = env_vars['var_prj_trusted'],
+        destination_project = env_vars['var_prj_refined'],
+        table_name          = env_vars['var_tb_top10_line_products'],
+        dataset_name        = env_vars['var_dataset_kaggle'],
+        region              = env_vars['region']
+    )
 ## DEFINIÇÃO DOS PARAMETROS DA DAG ##
 with DAG(
     dag_id              = "dag_kaggle_sample_sales",
@@ -115,41 +146,17 @@ with DAG(
     )
 
     # 4. Task para carregar os dados do BigQuery para a camada trusted
-    prc_load_trusted_tb_sample_sales = BigQueryInsertJobOperator(
+    prc_load_trusted_tb_sample_sales = PythonOperator(
         task_id         = "prc_load_trusted_tb_sample_sales",
-         configuration  = {
-                            "query": {
-                                "query": """
-                                    CALL `{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}.procs.prc_load_tb_sample_sales`(
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_raw"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tb_sample_sales"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_dataset_kaggle"] }}'
-                                    );
-                                """,
-                                "useLegacySql": False,
-                            }
-                         },
-        location        = "southamerica-east1",  
+        python_callable = invoke_prc_load_trusted_tb_sample_sales,
+        provide_context = True
     )
 
     # 5. Task para carregar os dados do BigQuery para a camada refined
-    prc_load_refined_tb_top10_line_products = BigQueryInsertJobOperator(
+    prc_load_refined_tb_top10_line_products = PythonOperator(
         task_id         = "prc_load_refined_tb_top10_line_products",
-         configuration  = {
-                            "query": {
-                                "query": """
-                                    CALL `{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_refined"] }}.procs.prc_load_tb_top10_line_products`(
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_refined"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_tb_top10_line_products"] }}',
-                                        '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_dataset_kaggle"] }}'
-                                    );
-                                """,
-                                "useLegacySql": False,
-                            }
-                         },
-        location        = "southamerica-east1",  
+        python_callable = invoke_prc_load_refined_tb_top10_line_products,
+        provide_context = True
     )
 
     end = DummyOperator(
