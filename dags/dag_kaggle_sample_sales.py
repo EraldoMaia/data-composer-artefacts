@@ -2,6 +2,7 @@ from airflow                                            import DAG
 from airflow.models                                     import Variable
 from airflow.operators.python                           import PythonOperator
 from airflow.operators.dummy                            import DummyOperator
+from airflow.models.baseoperator                        import chain
 
 
 from datetime                                           import datetime
@@ -238,8 +239,5 @@ with DAG(
                     ]
 
     # Fluxo de execucao da DAG
-    start >> raw_pipe >> join 
-    start >> trusted_pipe >> join 
-    start >> refined_pipe >> join
-    
-    join >> end
+    # Unifica as tarefas de cada camada e conecta ao final
+    chain(start, *raw_pipe, *trusted_pipe, *refined_pipe, end)
