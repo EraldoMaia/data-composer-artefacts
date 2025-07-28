@@ -145,15 +145,15 @@ with DAG(
     )
 
     # 3. Task para invocar a Cloud Function, que carrega os dados do GCS para o BigQuery
-    fnc_get_gcs_load_gbq = PythonOperator(
-        task_id         = "fnc_get_gcs_load_gbq",
+    fnc_load_raw_sample_sale = PythonOperator(
+        task_id         = "fnc_load_raw_sample_sale",
         python_callable = invoke_fnc_get_gcs_load_gbq,
         provide_context = True
     )
 
     # 4. Task para carregar os dados do BigQuery para a camada trusted
-    prc_load_tb_sample_sales = invoke_gbq_proc(
-        task_id = "prc_load_tb_sample_sales",
+    prc_load_trusted_tb_sample_sales = invoke_gbq_proc(
+        task_id = "prc_load_trusted_tb_sample_sales",
         query   = """
                     CALL `{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_trusted'] }}.procs.prc_load_tb_sample_sales` (
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_raw"] }}',
@@ -165,8 +165,8 @@ with DAG(
     )
 
     # 5. Task para carregar os dados do BigQuery para a camada refined
-    prc_load_tb_top10_line_products = invoke_gbq_proc(
-        task_id = "prc_load_tb_top10_line_products",
+    prc_load_refined_tb_top10_line_products = invoke_gbq_proc(
+        task_id = "prc_load_refined_tb_top10_line_products",
         query   = """
                     CALL `{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_refined'] }}.procs.prc_load_tb_top10_line_products` (
                         '{{ ti.xcom_pull(task_ids="load_env_vars", key="env_vars")["var_prj_trusted"] }}',
@@ -214,27 +214,21 @@ with DAG(
         task_id = "end"
     )   
 
-    join = DummyOperator(
-        task_id      = 'join',
-        params       = {'description': 'Unifica fluxos do pipeline'},
-        trigger_rule = 'all_done'
-    )
-
     # Lista de tarefas para o fluxo de execucao da camada raw, trusted e refined
     raw_pipe     = [
                     load_env_vars,
                     fnc_get_kaggle_load_gcs,
-                    fnc_get_gcs_load_gbq,
+                    fnc_load_raw_sample_sale,
                     check_carga_raw_sample_sales
                     ]
         
     trusted_pipe = [
-                    prc_load_tb_sample_sales, 
+                    prc_load_trusted_tb_sample_sales, 
                     check_carga_trusted_tb_sample_sales
                     ]
     
     refined_pipe = [
-                    prc_load_tb_top10_line_products,
+                    prc_load_refined_tb_top10_line_products,
                     check_carga_refined_tb_top10_line_products
                     ]
 
