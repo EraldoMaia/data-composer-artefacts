@@ -213,17 +213,33 @@ with DAG(
         task_id = "end"
     )   
 
+    join = DummyOperator(
+        task_id      = 'join',
+        params       = {'description': 'Unifica fluxos do pipeline'},
+        trigger_rule = 'all_done'
+    )
+
     # Lista de tarefas para o fluxo de execucao da camada raw, trusted e refined
-    raw_pipe = [load_env_vars,
-                fnc_get_kaggle_load_gcs,
-                fnc_get_gcs_load_gbq,
-                check_carga_raw_sample_sales]
+    raw_pipe     = [
+                    load_env_vars,
+                    fnc_get_kaggle_load_gcs,
+                    fnc_get_gcs_load_gbq,
+                    check_carga_raw_sample_sales
+                    ]
+        
+    trusted_pipe = [
+                    prc_load_tb_sample_sales, 
+                    check_carga_trusted_tb_sample_sales
+                    ]
     
-    trusted_pipe = [prc_load_tb_sample_sales, 
-                    check_carga_trusted_tb_sample_sales]
-    
-    refined_pipe = [prc_load_tb_top10_line_products,
-                    check_carga_refined_tb_top10_line_products]
+    refined_pipe = [
+                    prc_load_tb_top10_line_products,
+                    check_carga_refined_tb_top10_line_products
+                    ]
 
     # Fluxo de execucao da DAG
-    start >> raw_pipe >> trusted_pipe >> refined_pipe >> end
+    start >> raw_pipe >> join 
+    start >> trusted_pipe >> join 
+    start >> refined_pipe >> join
+    
+    join >> end
