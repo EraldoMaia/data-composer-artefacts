@@ -175,10 +175,21 @@ with DAG(
                     );
                     """    
     )
+    
+    # 6. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável (camada raw)
+    check_carga_raw_sample_sales = check_carga_media_log(
+            task_id             = "check_carga_raw_sample_sales",
+            project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_raw'] }}",
+            dataset_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_dataset_kaggle'] }}",
+            table_name          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['input_data_gcs_gbq']['file_prefix'] }}",
+            dias_media          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['dias_media'] }}",
+            tolerancia_inferior = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['tolerancia_inferior'] }}", 
+            tolerancia_superior = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['tolerancia_superior'] }}"   
+    )
 
-    # 6. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável
-    check_carga_tb_sample_sales = check_carga_media_log(
-            task_id             = "check_carga_tb_sample_sales",
+    # 7. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável (camada trusted)
+    check_carga_trusted_tb_sample_sales = check_carga_media_log(
+            task_id             = "check_carga_trusted_tb_sample_sales",
             project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_trusted'] }}",
             dataset_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_dataset_kaggle'] }}",
             table_name          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_tb_sample_sales'] }}",
@@ -187,9 +198,9 @@ with DAG(
             tolerancia_superior = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['tolerancia_superior'] }}"   
     )
 
-    # 7. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável
-    check_carga_tb_top10_line_products = check_carga_media_log(
-            task_id             = "check_carga_tb_top10_line_products",
+    # 8. Task para verificar se a carga do dia está com a quantidade de linhas dentro do intervalo aceitável (camada refined)
+    check_carga_refined_tb_top10_line_products = check_carga_media_log(
+            task_id             = "check_carga_refined_tb_top10_line_products",
             project_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_prj_refined'] }}",
             dataset_id          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_dataset_kaggle'] }}",
             table_name          = "{{ ti.xcom_pull(task_ids='load_env_vars', key='env_vars')['var_tb_top10_line_products'] }}",
@@ -202,5 +213,17 @@ with DAG(
         task_id = "end"
     )   
 
-    # Fluxo de Execução
-    start >> load_env_vars >> fnc_get_kaggle_load_gcs >> fnc_get_gcs_load_gbq >> prc_load_tb_sample_sales >> check_carga_tb_sample_sales >> prc_load_tb_top10_line_products >> check_carga_tb_top10_line_products >> end
+    # Lista de tarefas para o fluxo de execucao da camada raw, trusted e refined
+    raw_pipe = [load_env_vars,
+                fnc_get_kaggle_load_gcs,
+                fnc_get_gcs_load_gbq,
+                check_carga_raw_sample_sales]
+    
+    trusted_pipe = [prc_load_tb_sample_sales, 
+                    check_carga_trusted_tb_sample_sales]
+    
+    refined_pipe = [prc_load_tb_top10_line_products,
+                    check_carga_refined_tb_top10_line_products]
+
+    # Fluxo de execucao da DAG
+    start >> raw_pipe >> trusted_pipe >> refined_pipe >> end
